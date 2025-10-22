@@ -5,7 +5,7 @@
 -- RUN IN POSTGRES - POSTGRES
 
 -- 01. Create user
-CREATE USER sm_admin WITH PASSWORD '****';
+CREATE USER sm_admin WITH PASSWORD '******';
 
 -- 02. Create database (with ENCODING= 'UTF8', TEMPLATE=Template0, OWNER: music_admin)
 CREATE DATABASE smarthdb WITH 
@@ -17,7 +17,6 @@ CREATE DATABASE smarthdb WITH
 
 -- 03. Grant privileges
 GRANT ALL PRIVILEGES ON DATABASE smarthdb TO sm_admin;
-
 -- RUN IN smarthdb - sm_admin
 -- 04. Create Schema
 CREATE SCHEMA IF NOT EXISTS smart_health AUTHORIZATION sm_admin;
