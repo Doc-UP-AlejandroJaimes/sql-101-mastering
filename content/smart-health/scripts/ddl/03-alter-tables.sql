@@ -12,10 +12,31 @@
 
 -- Add a 'blood_type' column to the PATIENTS table to store patient blood type
 -- This is critical medical information needed for emergencies and transfusions
-ALTER TABLE patients 
+ALTER TABLE smart_health.patients 
 ADD COLUMN blood_type VARCHAR(5) CHECK (blood_type IN ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'));
 
-COMMENT ON COLUMN patients.blood_type IS 'Tipo de sangre del paciente (A+, A-, B+, B-, AB+, AB-, O+, O-)';
+COMMENT ON COLUMN smart_health.patients.blood_type IS 'Tipo de sangre del paciente (A+, A-, B+, B-, AB+, AB-, O+, O-)';
+
+-- ============================================
+-- CONSTRAINTS PARA ALERGIAS
+-- ============================================
+ALTER TABLE smart_health.patient_allergies
+ADD CONSTRAINT chk_patient_severity
+CHECK (severity IN ('Leve', 'Moderada', 'Grave', 'Crítica', 'Letal'));
+
+-- ============================================
+-- CONSTRAINTS PARA TIPOS DE DIRECCIONES
+-- ============================================
+
+-- Constraint para tipos de direcciones de pacientes
+ALTER TABLE smart_health.patient_addresses
+ADD CONSTRAINT chk_patient_address_type 
+CHECK (address_type IN ('Casa', 'Trabajo', 'Facturación', 'Temporal', 'Contacto Emergencia'));
+
+-- Constraint para tipos de direcciones de doctores
+ALTER TABLE smart_health.doctor_addresses
+ADD CONSTRAINT chk_doctor_address_type 
+CHECK (address_type IN ('Casa', 'Consultorio', 'Hospital', 'Clínica', 'Administrativa'));
 
 -- ##################################################
 -- #                 END OF SCRIPT                  #

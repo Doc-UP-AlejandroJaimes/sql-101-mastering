@@ -15,9 +15,15 @@
 -- #           SCHEMA CREATION (Optional)           #
 -- ##################################################
 
--- Uncomment if you want to use a specific schema
--- CREATE SCHEMA IF NOT EXISTS smart_health.smart_health;
--- SET search_path TO smart_health;
+-- RUN IN smarthdb - sm_admin
+-- 04. Create Schema
+CREATE SCHEMA IF NOT EXISTS smart_health AUTHORIZATION sm_admin;
+
+-- 05. Comment on database
+COMMENT ON DATABASE smarthdb IS 'Base de datos para el control de pacientes y citas';
+
+-- 06. Comment on schema
+COMMENT ON SCHEMA smart_health IS 'Esquema principal para el sistema de control de pacientes y citas';
 
 -- ##################################################
 -- #        MÓDULO GEOGRÁFICO - INDEPENDENT         #
@@ -31,8 +37,8 @@ CREATE TABLE IF NOT EXISTS smart_health.departments (
 );
 
 COMMENT ON TABLE smart_health.departments IS 'Catálogo de departamentos o estados';
-COMMENT ON COLUMN smart_health.smart_health.departments.department_code IS 'Código único del departamento';
-COMMENT ON COLUMN smart_health.smart_health.departments.department_name IS 'Nombre completo del departamento';
+COMMENT ON COLUMN smart_health.departments.department_code IS 'Código único del departamento';
+COMMENT ON COLUMN smart_health.departments.department_name IS 'Nombre completo del departamento';
 
 -- Table: municipalities
 -- Brief: Stores municipalities/cities that belong to departments
@@ -72,7 +78,7 @@ COMMENT ON COLUMN smart_health.addresses.active IS 'Indica si la dirección est�
 -- Brief: Catalog of identification document types (CC, CE, PA, TI, etc.)
 CREATE TABLE IF NOT EXISTS smart_health.document_types (
     document_type_id SERIAL PRIMARY KEY,
-    type_name VARCHAR(50) NOT NULL UNIQUE,
+    type_name VARCHAR(70) NOT NULL UNIQUE,
     type_code VARCHAR(10) NOT NULL UNIQUE,
     description TEXT
 );
@@ -141,6 +147,8 @@ CREATE TABLE IF NOT EXISTS smart_health.patients (
     birth_date DATE NOT NULL,
     gender CHAR(1) NOT NULL CHECK (gender IN ('M', 'F', 'O')),
     email VARCHAR(100) UNIQUE,
+    document_type_id INTEGER NOT NULL,
+    document_number VARCHAR(50) NOT NULL,
     registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     active BOOLEAN DEFAULT TRUE
 );
@@ -156,33 +164,15 @@ COMMENT ON COLUMN smart_health.patients.gender IS 'Género del paciente (M: Masc
 COMMENT ON COLUMN smart_health.patients.email IS 'Correo electrónico del paciente';
 COMMENT ON COLUMN smart_health.patients.registration_date IS 'Fecha y hora de registro en el sistema';
 COMMENT ON COLUMN smart_health.patients.active IS 'Indica si el paciente está activo en el sistema';
-
--- Table: patient_documents
--- Brief: Identification documents for patients (normalized multivalued attribute)
-CREATE TABLE IF NOT EXISTS smart_health.patient_documents (
-    patient_document_id SERIAL PRIMARY KEY,
-    patient_id INTEGER NOT NULL,
-    document_type_id INTEGER NOT NULL,
-    document_number VARCHAR(50) NOT NULL,
-    issuing_country CHAR(3) NOT NULL,
-    issue_date DATE,
-    CONSTRAINT uq_patient_document UNIQUE (document_type_id, document_number, issuing_country)
-);
-
-COMMENT ON TABLE smart_health.patient_documents IS 'Documentos de identificación del paciente (atributo multivaluado normalizado)';
-COMMENT ON COLUMN smart_health.patient_documents.patient_document_id IS 'Identificador único del documento';
-COMMENT ON COLUMN smart_health.patient_documents.patient_id IS 'Referencia al paciente';
-COMMENT ON COLUMN smart_health.patient_documents.document_type_id IS 'Tipo de documento';
-COMMENT ON COLUMN smart_health.patient_documents.document_number IS 'Número del documento';
-COMMENT ON COLUMN smart_health.patient_documents.issuing_country IS 'País emisor del documento (ISO-3166)';
-COMMENT ON COLUMN smart_health.patient_documents.issue_date IS 'Fecha de emisión del documento';
+COMMENT ON COLUMN smart_health.patients.document_type_id IS 'Tipo de documento';
+COMMENT ON COLUMN smart_health.patients.document_number IS 'Número del documento';
 
 -- Table: patient_phones
 -- Brief: Contact phone numbers for patients
 CREATE TABLE IF NOT EXISTS smart_health.patient_phones (
     patient_phone_id SERIAL PRIMARY KEY,
     patient_id INTEGER NOT NULL,
-    phone_type VARCHAR(20) NOT NULL CHECK (phone_type IN ('Mobile', 'Landline')),
+    phone_type VARCHAR(20) NOT NULL CHECK (phone_type IN ('Móvil', 'Fijo')),
     phone_number VARCHAR(20) NOT NULL,
     is_primary BOOLEAN DEFAULT FALSE
 );
@@ -427,116 +417,113 @@ COMMENT ON COLUMN smart_health.prescriptions.alert_generated IS 'Indica si se ge
 
 -- Relationships for MÓDULO GEOGRÁFICO
 
-ALTER TABLE municipalities ADD CONSTRAINT fk_municipalities_departments
-    FOREIGN KEY (department_code) REFERENCES departments (department_code)
+ALTER TABLE smart_health.municipalities ADD CONSTRAINT fk_municipalities_departments
+    FOREIGN KEY (department_code) REFERENCES smart_health.departments (department_code)
     ON UPDATE CASCADE ON DELETE RESTRICT;
 
-ALTER TABLE addresses ADD CONSTRAINT fk_addresses_municipalities
-    FOREIGN KEY (municipality_code) REFERENCES municipalities (municipality_code)
+ALTER TABLE smart_health.addresses ADD CONSTRAINT fk_addresses_municipalities
+    FOREIGN KEY (municipality_code) REFERENCES smart_health.municipalities (municipality_code)
     ON UPDATE CASCADE ON DELETE RESTRICT;
 
 -- Relationships for PATIENT_ADDRESSES
 
-ALTER TABLE patient_addresses ADD CONSTRAINT fk_patient_addresses_patients
-    FOREIGN KEY (patient_id) REFERENCES patients (patient_id)
+ALTER TABLE smart_health.patient_addresses ADD CONSTRAINT fk_patient_addresses_patients
+    FOREIGN KEY (patient_id) REFERENCES smart_health.patients (patient_id)
     ON UPDATE CASCADE ON DELETE CASCADE;
 
-ALTER TABLE patient_addresses ADD CONSTRAINT fk_patient_addresses_addresses
-    FOREIGN KEY (address_id) REFERENCES addresses (address_id)
+ALTER TABLE smart_health.patient_addresses ADD CONSTRAINT fk_patient_addresses_addresses
+    FOREIGN KEY (address_id) REFERENCES smart_health.addresses (address_id)
     ON UPDATE CASCADE ON DELETE CASCADE;
 
 -- Relationships for DOCTOR_ADDRESSES
 
-ALTER TABLE doctor_addresses ADD CONSTRAINT fk_doctor_addresses_doctors
-    FOREIGN KEY (doctor_id) REFERENCES doctors (doctor_id)
+ALTER TABLE smart_health.doctor_addresses ADD CONSTRAINT fk_doctor_addresses_doctors
+    FOREIGN KEY (doctor_id) REFERENCES smart_health.doctors (doctor_id)
     ON UPDATE CASCADE ON DELETE CASCADE;
 
-ALTER TABLE doctor_addresses ADD CONSTRAINT fk_doctor_addresses_addresses
-    FOREIGN KEY (address_id) REFERENCES addresses (address_id)
+ALTER TABLE smart_health.doctor_addresses ADD CONSTRAINT fk_doctor_addresses_addresses
+    FOREIGN KEY (address_id) REFERENCES smart_health.addresses (address_id)
     ON UPDATE CASCADE ON DELETE CASCADE;
 
 -- Relationships for PATIENT_DOCUMENTS
+-- Brief: Catalog of identification document types (CC, CE, PA, TI, etc.)
 
-ALTER TABLE patient_documents ADD CONSTRAINT fk_patient_documents_patients
-    FOREIGN KEY (patient_id) REFERENCES patients (patient_id)
-    ON UPDATE CASCADE ON DELETE CASCADE;
-
-ALTER TABLE patient_documents ADD CONSTRAINT fk_patient_documents_document_types
-    FOREIGN KEY (document_type_id) REFERENCES document_types (document_type_id)
-    ON UPDATE CASCADE ON DELETE RESTRICT;
+ALTER TABLE smart_health.patients ADD CONSTRAINT fk_patient_document_type_id
+    FOREIGN KEY (document_type_id) REFERENCES smart_health.document_types (document_type_id)
+    ON UPDATE CASCADE ON DELETE CASCADE;    
 
 -- Relationships for PATIENT_PHONES
 
-ALTER TABLE patient_phones ADD CONSTRAINT fk_patient_phones_patients
-    FOREIGN KEY (patient_id) REFERENCES patients (patient_id)
+ALTER TABLE smart_health.patient_phones ADD CONSTRAINT fk_patient_phones_patients
+    FOREIGN KEY (patient_id) REFERENCES smart_health.patients (patient_id)
     ON UPDATE CASCADE ON DELETE CASCADE;
 
 -- Relationships for PATIENT_ALLERGIES
 
-ALTER TABLE patient_allergies ADD CONSTRAINT fk_patient_allergies_patients
-    FOREIGN KEY (patient_id) REFERENCES patients (patient_id)
+ALTER TABLE smart_health.patient_allergies ADD CONSTRAINT fk_patient_allergies_patients
+    FOREIGN KEY (patient_id) REFERENCES smart_health.patients (patient_id)
     ON UPDATE CASCADE ON DELETE CASCADE;
 
-ALTER TABLE patient_allergies ADD CONSTRAINT fk_patient_allergies_medications
-    FOREIGN KEY (medication_id) REFERENCES medications (medication_id)
+ALTER TABLE smart_health.patient_allergies ADD CONSTRAINT fk_patient_allergies_medications
+    FOREIGN KEY (medication_id) REFERENCES smart_health.medications (medication_id)
     ON UPDATE CASCADE ON DELETE RESTRICT;
 
 -- Relationships for DOCTOR_SPECIALTIES
 
-ALTER TABLE doctor_specialties ADD CONSTRAINT fk_doctor_specialties_doctors
-    FOREIGN KEY (doctor_id) REFERENCES doctors (doctor_id)
+ALTER TABLE smart_health.doctor_specialties ADD CONSTRAINT fk_doctor_specialties_doctors
+    FOREIGN KEY (doctor_id) REFERENCES smart_health.doctors (doctor_id)
     ON UPDATE CASCADE ON DELETE CASCADE;
 
-ALTER TABLE doctor_specialties ADD CONSTRAINT fk_doctor_specialties_specialties
-    FOREIGN KEY (specialty_id) REFERENCES specialties (specialty_id)
+ALTER TABLE smart_health.doctor_specialties ADD CONSTRAINT fk_doctor_specialties_specialties
+    FOREIGN KEY (specialty_id) REFERENCES smart_health.specialties (specialty_id)
     ON UPDATE CASCADE ON DELETE RESTRICT;
 
 -- Relationships for APPOINTMENTS
 
-ALTER TABLE appointments ADD CONSTRAINT fk_appointments_patients
-    FOREIGN KEY (patient_id) REFERENCES patients (patient_id)
+ALTER TABLE smart_health.appointments ADD CONSTRAINT fk_appointments_patients
+    FOREIGN KEY (patient_id) REFERENCES smart_health.patients (patient_id)
     ON UPDATE CASCADE ON DELETE RESTRICT;
 
-ALTER TABLE appointments ADD CONSTRAINT fk_appointments_doctors
-    FOREIGN KEY (doctor_id) REFERENCES doctors (doctor_id)
+ALTER TABLE smart_health.appointments ADD CONSTRAINT fk_appointments_doctors
+    FOREIGN KEY (doctor_id) REFERENCES smart_health.doctors (doctor_id)
     ON UPDATE CASCADE ON DELETE RESTRICT;
 
-ALTER TABLE appointments ADD CONSTRAINT fk_appointments_rooms
-    FOREIGN KEY (room_id) REFERENCES rooms (room_id)
+ALTER TABLE smart_health.appointments ADD CONSTRAINT fk_appointments_rooms
+    FOREIGN KEY (room_id) REFERENCES smart_health.rooms (room_id)
     ON UPDATE CASCADE ON DELETE SET NULL;
 
 -- Relationships for MEDICAL_RECORDS
 
-ALTER TABLE medical_records ADD CONSTRAINT fk_medical_records_patients
-    FOREIGN KEY (patient_id) REFERENCES patients (patient_id)
+ALTER TABLE smart_health.medical_records ADD CONSTRAINT fk_medical_records_patients
+    FOREIGN KEY (patient_id) REFERENCES smart_health.patients (patient_id)
     ON UPDATE CASCADE ON DELETE RESTRICT;
 
-ALTER TABLE medical_records ADD CONSTRAINT fk_medical_records_doctors
-    FOREIGN KEY (doctor_id) REFERENCES doctors (doctor_id)
+ALTER TABLE smart_health.medical_records ADD CONSTRAINT fk_medical_records_doctors
+    FOREIGN KEY (doctor_id) REFERENCES smart_health.doctors (doctor_id)
     ON UPDATE CASCADE ON DELETE RESTRICT;
 
-ALTER TABLE medical_records ADD CONSTRAINT fk_medical_records_diagnoses
-    FOREIGN KEY (primary_diagnosis_id) REFERENCES diagnoses (diagnosis_id)
+ALTER TABLE smart_health.medical_records ADD CONSTRAINT fk_medical_records_diagnoses
+    FOREIGN KEY (primary_diagnosis_id) REFERENCES smart_health.diagnoses (diagnosis_id)
     ON UPDATE CASCADE ON DELETE SET NULL;
 
 -- Relationships for RECORD_DIAGNOSES
 
-ALTER TABLE record_diagnoses ADD CONSTRAINT fk_record_diagnoses_medical_records
-    FOREIGN KEY (medical_record_id) REFERENCES medical_records (medical_record_id)
+ALTER TABLE smart_health.record_diagnoses ADD CONSTRAINT fk_record_diagnoses_medical_records
+    FOREIGN KEY (medical_record_id) REFERENCES smart_health.medical_records (medical_record_id)
     ON UPDATE CASCADE ON DELETE CASCADE;
 
-ALTER TABLE record_diagnoses ADD CONSTRAINT fk_record_diagnoses_diagnoses
-    FOREIGN KEY (diagnosis_id) REFERENCES diagnoses (diagnosis_id)
+ALTER TABLE smart_health.record_diagnoses ADD CONSTRAINT fk_record_diagnoses_diagnoses
+    FOREIGN KEY (diagnosis_id) REFERENCES smart_health.diagnoses (diagnosis_id)
     ON UPDATE CASCADE ON DELETE RESTRICT;
 
 -- Relationships for PRESCRIPTIONS
 
-ALTER TABLE prescriptions ADD CONSTRAINT fk_prescriptions_medical_records
-    FOREIGN KEY (medical_record_id) REFERENCES medical_records (medical_record_id)
+ALTER TABLE smart_health.prescriptions ADD CONSTRAINT fk_prescriptions_medical_records
+    FOREIGN KEY (medical_record_id) REFERENCES smart_health.medical_records (medical_record_id)
     ON UPDATE CASCADE ON DELETE CASCADE;
 
-ALTER TABLE prescriptions ADD CONSTRAINT fk_prescriptions_medications
-    FOREIGN KEY (medication_id) REFERENCES medications (medication_id)
+ALTER TABLE smart_health.prescriptions ADD CONSTRAINT fk_prescriptions_medications
+    FOREIGN KEY (medication_id) REFERENCES smart_health.medications (medication_id)
     ON UPDATE CASCADE ON DELETE RESTRICT;
 
 -- ##################################################

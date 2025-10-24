@@ -40,17 +40,10 @@ Table patients {
   birth_date date [not null]
   gender char(1) [not null]
   email varchar(100) [unique]
-  registration_date timestamp [default: `CURRENT_TIMESTAMP`]
-  active boolean [default: true]
-}
-
-Table patient_documents {
-  patient_document_id serial [primary key]
-  patient_id int [not null]
   document_type_id int [not null]
   document_number varchar(50) [not null]
-  issuing_country char(3) [not null]
-  issue_date date
+  registration_date timestamp [default: `CURRENT_TIMESTAMP`]
+  active boolean [default: true]
 }
 
 Table patient_phones {
@@ -218,9 +211,7 @@ Ref: doctor_addresses.address_id > addresses.address_id [delete: cascade, update
 // RELACIONES - MÓDULO PACIENTES
 // ============================================
 
-Ref: patient_documents.patient_id > patients.patient_id [delete: cascade, update: cascade]
-
-Ref: patient_documents.document_type_id > document_types.document_type_id [delete: restrict, update: cascade]
+Ref: document_types.document_type_id - patients.document_type_id [delete: cascade, update: cascade]
 
 Ref: patient_phones.patient_id > patients.patient_id [delete: cascade, update: cascade]
 
