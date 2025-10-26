@@ -190,7 +190,7 @@ CREATE TABLE IF NOT EXISTS smart_health.patient_addresses (
     patient_address_id SERIAL PRIMARY KEY,
     patient_id INTEGER NOT NULL,
     address_id INTEGER NOT NULL,
-    address_type VARCHAR(20) NOT NULL CHECK (address_type IN ('Permanent', 'Temporary')),
+    address_type VARCHAR(20) NOT NULL,
     is_primary BOOLEAN DEFAULT FALSE,
     valid_from DATE,
     valid_to DATE,
@@ -212,7 +212,7 @@ CREATE TABLE IF NOT EXISTS smart_health.patient_allergies (
     patient_allergy_id SERIAL PRIMARY KEY,
     patient_id INTEGER NOT NULL,
     medication_id INTEGER NOT NULL,
-    severity VARCHAR(20) NOT NULL CHECK (severity IN ('Mild', 'Moderate', 'Severe')),
+    severity VARCHAR(20) NOT NULL,
     reaction_description TEXT,
     diagnosed_date DATE
 );
@@ -278,7 +278,7 @@ CREATE TABLE IF NOT EXISTS smart_health.doctor_addresses (
     doctor_address_id SERIAL PRIMARY KEY,
     doctor_id INTEGER NOT NULL,
     address_id INTEGER NOT NULL,
-    address_type VARCHAR(20) NOT NULL CHECK (address_type IN ('Office', 'Hospital')),
+    address_type VARCHAR(20) NOT NULL,
     office_hours TEXT,
     is_primary BOOLEAN DEFAULT FALSE,
     CONSTRAINT uq_doctor_address UNIQUE (doctor_id, address_id)
