@@ -5,7 +5,7 @@
 -- RUN IN POSTGRES - POSTGRES
 
 -- 01. Create user
-CREATE USER sm_admin WITH PASSWORD '******';
+CREATE USER sm_admin WITH PASSWORD 'sm2025**';
 
 -- 02. Create database (with ENCODING= 'UTF8', TEMPLATE=Template0, OWNER: music_admin)
 CREATE DATABASE smarthdb WITH 
