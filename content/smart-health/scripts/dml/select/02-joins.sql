@@ -71,3 +71,139 @@ LIMIT 10;
 -- departamentos, uniendo ambas tablas mediante la clave foránea department_code. 
 -- Se ordena por el nombre del departamento para facilitar la localización 
 -- geográfica, mostrando los 15 primeros resultados.
+
+
+-- Obtener los pacientes (primer nombre, genero, correo), con sus numeros de telefono
+-- que tengan los siguientes numeros de documentos
+
+-- '1006631391',
+-- '1009149871',
+-- '1298083',
+-- '1004928596',
+-- '1008188849',
+-- '1607132',
+-- '30470003'
+
+-- INNER JOIN
+
+-- smart_health.patients : patient_id (PK)
+-- smart_health.patient_phones : patient_id (FK)
+
+-- primer nombre
+-- genero
+-- correo
+-- numero_telefono
+SELECT
+    A.first_name AS primer_nombre,
+    A.gender AS genero,
+    A.email AS correo,
+    B.phone_number AS numero_telefono
+
+FROM smart_health.patients A
+INNER JOIN smart_health.patient_phones B 
+    ON A.patient_id = B.patient_id
+WHERE A.document_number IN
+(
+    '1006631391',
+    '1009149871',
+    '1298083',
+    '1004928596',
+    '1008188849',
+    '1607132',
+    '30470003'  
+);
+
+-- Obtener los pacientes (primer nombre, genero, correo), con sus numeros de telefono
+-- que tengan los siguientes numeros de documentos.
+-- tengan o no tengan un numero de telefono asociado.
+
+-- '1006631391',
+-- '1009149871',
+-- '1298083',
+-- '1004928596',
+-- '1008188849',
+-- '1607132',
+-- '30470003'
+
+-- RIGTH JOIN
+
+-- smart_health.patients : patient_id (PK)
+-- smart_health.patient_phones : patient_id (FK)
+
+-- primer nombre
+-- genero
+-- correo
+-- numero_telefono
+SELECT
+    B.first_name AS primer_nombre,
+    B.gender AS genero,
+    B.email AS correo,
+    A.phone_number AS numero_telefono
+
+FROM smart_health.patient_phones  A
+RIGHT JOIN smart_health.patients B 
+    ON A.patient_id = B.patient_id
+WHERE B.document_number IN
+(
+    '30451580',
+    '1006631391',
+    '1009149871',
+    '1298083',
+    '1004928596',
+    '1008188849',
+    '1607132',
+    '30470003'  
+);
+
+-- Obtener cuantos medicos, no tienen una direccion
+-- asociada.
+
+-- LEFT JOIN
+
+-- smart_health.doctors: doctor_id (PK)
+-- smart_health.doctor_addresses: doctor_id (PK)
+SELECT
+    COUNT(*) AS total_doctores_sin_direccion
+
+FROM smart_health.doctors A
+LEFT JOIN smart_health.doctor_addresses B
+    ON A.doctor_id = B.doctor_id
+WHERE B.doctor_id IS NULL;
+
+
+-- Mostrar direccion, genero, nombre_completo, municipio, direccion
+-- viven en pamplona
+-- ordenar por primer nombre
+-- mostrar 5
+
+SELECT
+    T1.first_name||' '||COALESCE(T1.middle_name, '')||' '||T1.first_surname||' '||COALESCE(T1.second_surname, '') AS paciente,
+    T1.gender AS genero,
+    T1.blood_type AS tipo_sangre,
+    T2.address_type AS tipo_direccion,
+    T3.address_line AS direccion,
+    T3.postal_code AS codigo_postal,
+    T4.municipality_name AS ciudad,
+    T5.department_name AS departamento
+
+FROM smart_health.patients T1
+INNER JOIN smart_health.patient_addresses T2
+    ON T1.patient_id = T2.patient_id
+INNER JOIN smart_health.addresses T3
+    ON T3.address_id = T2.address_id
+INNER JOIN smart_health.municipalities T4
+    ON T4.municipality_code = T3.municipality_code
+INNER JOIN smart_health.departments T5
+    ON T5.department_code = T4.department_code
+WHERE T4.municipality_name LIKE '%PAMPLONA%'
+ORDER BY T1.first_name
+LIMIT 5;
+
+--             paciente            | genero | tipo_sangre | tipo_direccion |                         direccion                          | codigo_postal |  ciudad  |    departamento
+-- --------------------------------+--------+-------------+----------------+------------------------------------------------------------+---------------+----------+--------------------
+--  Adriana  Aguirre Rojas         | F      | O+          | Casa           | Limite Urbano - Urbano                                     | 251238        | PAMPLONA | NORTE DE SANTANDER
+--  Adriana  Ríos Cabrera          | F      | O+          | Casa           | Rural - Municipio Belén - Mpio. Onzaga Y Coromoro          | 852050        | PAMPLONA | NORTE DE SANTANDER
+--  Adriana Patricia Díaz Pérez    | F      | O+          | Casa           | Vía Ventaquemada-Tunja - Rural - Municipio Samacá          | 991058        | PAMPLONA | NORTE DE SANTANDER
+--  Adriana  León Rojas            | O      | A+          | Casa           | Rural - M. Fómeque Y San Juanito - Municipio Villavicencio | 540004        | PAMPLONA | NORTE DE SANTANDER
+--  Alejandro Ángel González Pérez | O      | O-          | Trabajo        | Rural - Municipio Jericó - Río Pauto Y (Permanente)        | 414047        | PAMPLONA | NORTE DE SANTANDER
+-- (5 filas)
