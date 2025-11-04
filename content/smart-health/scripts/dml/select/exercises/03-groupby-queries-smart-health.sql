@@ -6,6 +6,24 @@
 -- mostrando el nombre del tipo de documento y la cantidad total de pacientes,
 -- ordenados por cantidad de mayor a menor.
 
+-- INNER JOIN
+-- smart_health.patients: FK (document_type_id)
+-- smart_health.document_types: PK(document_type_id)
+-- AGGREGATION FUNCTION: COUNT
+SELECT
+    T2.type_name AS tipo_documento,
+    COUNT(*) AS total_documentos
+
+
+FROM smart_health.patients T1
+INNER JOIN smart_health.document_types T2
+    ON T1.document_type_id = T2.document_type_id
+GROUP BY T2.type_name
+ORDER BY total_documentos DESC;
+
+
+
+
 -- 2. Obtener la cantidad de citas programadas por cada médico,
 -- mostrando el nombre completo del doctor y el total de citas,
 -- filtrando solo médicos con más de 5 citas, ordenados por cantidad descendente.

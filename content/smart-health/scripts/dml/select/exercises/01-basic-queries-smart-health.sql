@@ -6,6 +6,14 @@
 -- mostrando su nombre completo, correo electrónico y fecha de nacimiento,
 -- ordenados por apellido de forma ascendente.
 
+SELECT
+    first_name||' '||COALESCE(middle_name, '')||' '||first_surname||' '||COALESCE(second_surname, '') AS paciente,
+    email AS correo_electronico,
+    birth_date AS fecha_nacimiento
+FROM smart_health.patients
+WHERE gender = 'F'
+ORDER BY first_name, first_surname
+LIMIT 5;
 
 -- 2. Consultar todos los médicos que ingresaron al hospital después del año 2020,
 -- mostrando su código interno, nombre completo y fecha de admisión,
