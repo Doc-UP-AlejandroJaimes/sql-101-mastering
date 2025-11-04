@@ -1,0 +1,34 @@
+Total de Tablas: 20
+
+DEPARTMENT - Departamentos (PK: VARCHAR)
+MUNICIPALITY - Municipios (PK: VARCHAR, FK: department_code)
+ADDRESS - Direcciones físicas reutilizables (sin coordenadas)
+
+Módulo de Pacientes (5 tablas):
+
+PATIENT
+PATIENT_DOCUMENT
+PATIENT_PHONE
+PATIENT_ADDRESS
+PATIENT_ALLERGY
+
+Módulo de Profesionales (3 tablas):
+
+DOCTOR
+DOCTOR_SPECIALTY
+DOCTOR_ADDRESS
+
+Módulo de Atención (5 tablas):
+
+APPOINTMENT
+ROOM
+MEDICAL_RECORD
+RECORD_DIAGNOSIS
+PRESCRIPTION
+
+Módulo de Catálogos (4 tablas):
+
+DOCUMENT_TYPE
+SPECIALTY
+DIAGNOSIS
+MEDICATION

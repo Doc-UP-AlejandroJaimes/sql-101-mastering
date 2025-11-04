@@ -1,0 +1,228 @@
+erDiagram
+    %% ============================================
+    %% MÓDULO GEOGRÁFICO (SIMPLIFICADO)
+    %% ============================================
+    
+    DEPARTMENT ||--o{ MUNICIPALITY : "contains"
+    MUNICIPALITY ||--o{ ADDRESS : "located_in"
+    ADDRESS ||--o{ PATIENT_ADDRESS : "assigned_to"
+    ADDRESS ||--o{ DOCTOR_ADDRESS : "assigned_to"
+    
+    DEPARTMENT {
+        varchar department_code PK
+        varchar department_name "NOT NULL"
+    }
+    
+    MUNICIPALITY {
+        varchar municipality_code PK
+        varchar municipality_name "NOT NULL"
+        varchar department_code FK "NOT NULL"
+    }
+    
+    ADDRESS {
+        int address_id PK
+        varchar municipality_code FK "NOT NULL"
+        varchar address_line "NOT NULL"
+        varchar postal_code "NULL"
+        boolean active "DEFAULT TRUE"
+    }
+    
+    %% ============================================
+    %% MÓDULO DE PACIENTES
+    %% ============================================
+    
+    PATIENT ||--o{ PATIENT_DOCUMENT : "has"
+    PATIENT ||--o{ PATIENT_PHONE : "has"
+    PATIENT ||--o{ PATIENT_ADDRESS : "lives_at"
+    PATIENT ||--o{ PATIENT_ALLERGY : "suffers"
+    PATIENT ||--o{ APPOINTMENT : "schedules"
+    PATIENT ||--o{ MEDICAL_RECORD : "owns"
+    
+    PATIENT {
+        int patient_id PK
+        varchar first_name "NOT NULL"
+        varchar middle_name "NULL"
+        varchar first_surname "NOT NULL"
+        varchar second_surname "NULL"
+        date birth_date "NOT NULL"
+        char gender "CHECK(M,F,O), NOT NULL"
+        varchar email "UNIQUE, NULL"
+        timestamp registration_date "DEFAULT CURRENT_TIMESTAMP"
+        boolean active "DEFAULT TRUE"
+    }
+    
+    PATIENT_DOCUMENT {
+        int patient_document_id PK
+        int patient_id FK "NOT NULL"
+        int document_type_id FK "NOT NULL"
+        varchar document_number "NOT NULL"
+        char issuing_country "ISO-3166, NOT NULL"
+        date issue_date "NULL"
+    }
+    
+    PATIENT_PHONE {
+        int patient_phone_id PK
+        int patient_id FK "NOT NULL"
+        varchar phone_type "CHECK(Mobile,Landline), NOT NULL"
+        varchar number "NOT NULL"
+        boolean is_primary "DEFAULT FALSE"
+    }
+    
+    PATIENT_ADDRESS {
+        int patient_address_id PK
+        int patient_id FK "NOT NULL"
+        int address_id FK "NOT NULL"
+        varchar address_type "CHECK(Permanent,Temporary), NOT NULL"
+        boolean is_primary "DEFAULT FALSE"
+        date valid_from "NULL"
+        date valid_to "NULL"
+    }
+    
+    PATIENT_ALLERGY {
+        int patient_allergy_id PK
+        int patient_id FK "NOT NULL"
+        int medication_id FK "NOT NULL"
+        varchar severity "CHECK(Mild,Moderate,Severe), NOT NULL"
+        text reaction_description "NULL"
+        date diagnosed_date "NULL"
+    }
+    
+    %% ============================================
+    %% MÓDULO DE PROFESIONALES
+    %% ============================================
+    
+    DOCTOR ||--o{ DOCTOR_SPECIALTY : "practices"
+    DOCTOR ||--o{ DOCTOR_ADDRESS : "works_at"
+    DOCTOR ||--o{ APPOINTMENT : "attends"
+    DOCTOR ||--o{ MEDICAL_RECORD : "registers"
+    
+    DOCTOR {
+        int doctor_id PK
+        varchar internal_code "UNIQUE, NOT NULL"
+        varchar medical_license_number "UNIQUE, NOT NULL"
+        varchar names "NOT NULL"
+        varchar surnames "NOT NULL"
+        varchar professional_email "UNIQUE, NOT NULL"
+        varchar phone "NOT NULL"
+        date hospital_admission_date "NOT NULL"
+        boolean active "DEFAULT TRUE"
+    }
+    
+    DOCTOR_SPECIALTY {
+        int doctor_specialty_id PK
+        int doctor_id FK "NOT NULL"
+        int specialty_id FK "NOT NULL"
+        date certification_date "NULL"
+        boolean is_active "DEFAULT TRUE"
+    }
+    
+    DOCTOR_ADDRESS {
+        int doctor_address_id PK
+        int doctor_id FK "NOT NULL"
+        int address_id FK "NOT NULL"
+        varchar address_type "CHECK(Office,Hospital), NOT NULL"
+        text office_hours "NULL"
+        boolean is_primary "DEFAULT FALSE"
+    }
+    
+    %% ============================================
+    %% MÓDULO DE ATENCIÓN
+    %% ============================================
+    
+    APPOINTMENT }o--|| ROOM : "uses"
+    
+    APPOINTMENT {
+        int appointment_id PK
+        int patient_id FK "NOT NULL"
+        int doctor_id FK "NOT NULL"
+        int room_id FK "NULL"
+        date appointment_date "NOT NULL"
+        time start_time "NOT NULL"
+        time end_time "NOT NULL"
+        varchar appointment_type "NOT NULL"
+        varchar status "CHECK(Scheduled,Confirmed,Attended,Cancelled,NoShow), NOT NULL"
+        text reason "NULL"
+        timestamp creation_date "DEFAULT CURRENT_TIMESTAMP"
+    }
+    
+    ROOM {
+        int room_id PK
+        varchar name "UNIQUE, NOT NULL"
+        varchar type "NOT NULL"
+        int capacity "NULL"
+        varchar location "NULL"
+        boolean active "DEFAULT TRUE"
+    }
+    
+    MEDICAL_RECORD ||--o{ RECORD_DIAGNOSIS : "includes"
+    MEDICAL_RECORD ||--o{ PRESCRIPTION : "generates"
+    MEDICAL_RECORD }o--|| DIAGNOSIS : "primary_diagnosis"
+    
+    MEDICAL_RECORD {
+        int medical_record_id PK
+        int patient_id FK "NOT NULL"
+        int doctor_id FK "NOT NULL"
+        int primary_diagnosis_id FK "NULL"
+        timestamp registration_datetime "DEFAULT CURRENT_TIMESTAMP"
+        varchar record_type "NOT NULL"
+        text summary_text "NOT NULL"
+        text vital_signs "NULL"
+    }
+    
+    RECORD_DIAGNOSIS {
+        int record_diagnosis_id PK
+        int medical_record_id FK "NOT NULL"
+        int diagnosis_id FK "NOT NULL"
+        varchar diagnosis_type "CHECK(Principal,Secondary,Differential), NOT NULL"
+        text notes "NULL"
+    }
+    
+    PRESCRIPTION {
+        int prescription_id PK
+        int medical_record_id FK "NOT NULL"
+        int medication_id FK "NOT NULL"
+        varchar dosage "NOT NULL"
+        varchar frequency "NOT NULL"
+        varchar duration "NOT NULL"
+        text instructions "NULL"
+        timestamp prescription_date "DEFAULT CURRENT_TIMESTAMP"
+        boolean alert_generated "DEFAULT FALSE"
+    }
+    
+    %% ============================================
+    %% MÓDULO DE CATÁLOGOS
+    %% ============================================
+    
+    DOCUMENT_TYPE ||--o{ PATIENT_DOCUMENT : "classifies"
+    SPECIALTY ||--o{ DOCTOR_SPECIALTY : "certifies"
+    DIAGNOSIS ||--o{ RECORD_DIAGNOSIS : "codes"
+    DIAGNOSIS ||--o{ MEDICAL_RECORD : "primary"
+    MEDICATION ||--o{ PRESCRIPTION : "prescribed_in"
+    MEDICATION ||--o{ PATIENT_ALLERGY : "causes"
+    
+    DOCUMENT_TYPE {
+        int document_type_id PK
+        varchar name "UNIQUE, NOT NULL"
+        varchar code "UNIQUE, NOT NULL"
+        text description "NULL"
+    }
+    
+    SPECIALTY {
+        int specialty_id PK
+        varchar name "UNIQUE, NOT NULL"
+        text description "NULL"
+    }
+    
+    DIAGNOSIS {
+        int diagnosis_id PK
+        varchar icd_code "UNIQUE, NOT NULL"
+        varchar description "NOT NULL"
+    }
+    
+    MEDICATION {
+        int medication_id PK
+        varchar atc_code "UNIQUE, NOT NULL"
+        varchar commercial_name "NOT NULL"
+        varchar active_ingredient "NOT NULL"
+        varchar presentation "NOT NULL"
+    }
