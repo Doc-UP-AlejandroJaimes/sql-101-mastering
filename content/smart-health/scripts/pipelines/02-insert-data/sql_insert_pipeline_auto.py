@@ -31,7 +31,8 @@ class SQLPipeline:
             '03-INSERT-DOCUMENT-TYPES.sql',
             '04-INSERT-SPECIALTIES.sql',
             '05-INSERT-DIAGNOSES.sql',
-            '06-INSERT-MEDICATIONS.sql'
+            '06-INSERT-MEDICATIONS.sql',
+            '20-INSERT-PAYMENT-METHODS.sql'
         ]
         # Bulk load SQL files (from Bulk-Load directory)
         self.bulk_load_sql_files = [
@@ -47,7 +48,10 @@ class SQLPipeline:
             '16-INSERT-APPOINTMENTS.sql',
             '17-INSERT-MEDICAL_RECORDS.sql',
             '18-INSERT-RECORD-DIAGNOSES.sql',
-            '19-INSERT-PRESCRIPTIONS.sql']
+            '19-INSERT-PRESCRIPTIONS.sql',
+            '21-INSERT-ORDERS.sql',
+            '22-INSERT-PAYMENTS.sql']
+        
         self.delay_between_files = 1  # 1 second delay between files
 
     def parse_arguments(self):

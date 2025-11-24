@@ -38,6 +38,20 @@ ALTER TABLE smart_health.doctor_addresses
 ADD CONSTRAINT chk_doctor_address_type 
 CHECK (address_type IN ('Casa', 'Consultorio', 'Hospital', 'Clínica', 'Administrativa'));
 
+
+ALTER TABLE smart_health.payments
+ADD CONSTRAINT chk_payment_amount
+CHECK (amount > 0);
+
+ALTER TABLE smart_health.orders
+ADD CONSTRAINT chk_total_amount
+CHECK (total_amount >= 0);
+
+ALTER TABLE smart_health.orders
+ADD CONSTRAINT chk_tax_amount
+CHECK (tax_amount >= 0);
+
+
 -- ##################################################
 -- #                 END OF SCRIPT                  #
 -- ##################################################
