@@ -1,1 +1,1 @@
-python sql_insert_pipeline_auto.py --user sm_admin --password "sm2025**" --db-name smarthdb --schema-name smart_health --sql-dir ../../../data/sql --delay 1.5 --port 5433
+python sql_insert_pipeline_auto.py --user sm_admin --password "*" --db-name smarthdb --schema-name smart_health --sql-dir ../../../data/sql --delay 1.5 --port 5433
