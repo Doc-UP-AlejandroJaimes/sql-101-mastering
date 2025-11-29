@@ -174,6 +174,50 @@ ORDER BY porcentaje_impuestos DESC
 LIMIT 15;
 
 
+
+-- 8. Direccion del paciente
+
+SELECT T1.patient_id,
+       T2.reaction_description AS reaccion,
+       T2.severity AS nivel_alergia,
+       T3.commercial_name AS medication
+FROM smart_health.patients T1
+INNER JOIN smart_health.patient_allergies T2
+ON T1.patient_id = T2.patient_id
+INNER JOIN smart_health.medications T3
+ON T2.medication_id = T3.medication_id
+WHERE T1.active = TRUE
+LIMIT 1;
+
+
+CREATE OR REPLACE FUNCTION obtener_alergia_paciente(p_patient_id INTEGER)
+RETURNS VARCHAR(1000)
+LANGUAGE plpgsql
+AS 
+$$
+DECLARE
+    v_resultado VARCHAR(1000);
+BEGIN
+    SELECT 
+    CONCAT('Paciente ID: ', T1.patient_id, 
+           'Paciente: ', T1.first_name||' '||T1.FIRST_SURNAME, 
+           ' - Reacción: ', T2.reaction_description, 
+           ' - Nivel de alergia: ', T2.severity, 
+           ' - Medicamento: ', T3.commercial_name)
+    INTO v_resultado
+    FROM smart_health.patients T1
+    INNER JOIN smart_health.patient_allergies T2
+    ON T1.patient_id = T2.patient_id
+    INNER JOIN smart_health.medications T3
+    ON T2.medication_id = T3.medication_id
+    WHERE T1.active = TRUE
+    AND T1.patient_id = p_patient_id
+    GROUP BY T1.patient_id, T2.reaction_description, T2.severity, T3.commercial_name
+    LIMIT 1;
+    RETURN COALESCE(v_resultado, 'No se encontró una única alergia para el paciente especificado.');
+END;
+$$;
+
 -- ##################################################
 -- #                 END OF QUERIES                 #
 -- ##################################################
