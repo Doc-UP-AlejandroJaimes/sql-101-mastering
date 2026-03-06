@@ -155,3 +155,59 @@ LIMIT 10;
 -- ##################################################
 -- #                 END OF QUERIES                 #
 -- ##################################################
+SELECT subquery.patient_id,
+       (SELECT CONCAT(first_name,' ',middle_name,' ',first_surname, ' ',second_surname)
+        FROM smart_health.patients
+        WHERE subquery.patient_id = patient_id) AS patient_full_name,
+       COUNT(T2.appointment_id) AS total_appointments
+FROM (
+SELECT
+    patient_id,
+    birth_date,
+    smart_health.calcular_edad_paciente(patient_id) as patient_age
+
+FROM smart_health.patients
+WHERE smart_health.calcular_edad_paciente(patient_id) 
+    BETWEEN 22  AND 25
+    AND active = TRUE
+ORDER BY patient_id
+LIMIT 10) AS subquery
+LEFT JOIN smart_health.appointments T2
+    ON subquery.patient_id = T2.patient_id
+GROUP BY subquery.patient_id;
+--------------
+----- CTES ----
+----------------
+WITH paciente_filtrado AS (
+    SELECT
+    patient_id,
+    birth_date,
+    smart_health.calcular_edad_paciente(patient_id) as patient_age
+
+FROM smart_health.patients
+WHERE smart_health.calcular_edad_paciente(patient_id) 
+    BETWEEN 22  AND 25
+    AND active = TRUE
+ORDER BY patient_id
+LIMIT 10
+), paciente_nombres AS (
+    SELECT
+        T2.patient_id,
+        T2.birth_date,
+        T2.patient_age,
+        CONCAT(T1.first_name,' ',T1.middle_name,' ',T1.first_surname, ' ',T1.second_surname) AS full_name
+    FROM smart_health.patients T1
+    INNER JOIN paciente_filtrado T2
+        ON T1.patient_id = T2.patient_id
+)
+SELECT 
+    T1.patient_id,
+    T1.birth_date,
+    T1.patient_age,
+    T1.full_name,
+    COUNT(T2.appointment_id) AS total_appointments    
+
+FROM paciente_nombres T1
+LEFT JOIN smart_health.appointments T2
+    ON T1.patient_id = T2.patient_id
+GROUP BY T1.patient_id, T1.birth_date,  T1.patient_age, T1.full_name;
