@@ -18,7 +18,7 @@ CREATE SCHEMA cs AUTHORIZATION admin;
 
 -- CREATE TABLES;
 
-CREATE TABLE customers (
+CREATE TABLE cs.customers (
     id SERIAL PRIMARY KEY,
     id_number VARCHAR(50) UNIQUE NOT NULL,
     birth_date DATE NOT NULL,
@@ -28,21 +28,21 @@ CREATE TABLE customers (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE orders (
+CREATE TABLE cs.orders (
     id SERIAL PRIMARY KEY,
     customer_id INT NOT NULL,
     order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     total DECIMAL(10, 2) NULL
 );
 
-CREATE TABLE products (
+CREATE TABLE cs.products (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     usd_price DECIMAL(10, 2) NOT NULL,
     cop_price DECIMAL(10, 2) NULL
 );
 
-CREATE TABLE order_items (
+CREATE TABLE cs.order_items (
     id SERIAL PRIMARY KEY,
     order_id INT NOT NULL,
     product_id INT NOT NULL,
@@ -50,21 +50,21 @@ CREATE TABLE order_items (
 );
 
 -- RELATIONSHIPS;
-ALTER TABLE orders
+ALTER TABLE cs.orders
 ADD CONSTRAINT fk_customer
-FOREIGN KEY (customer_id) REFERENCES customers(id);
+FOREIGN KEY (customer_id) REFERENCES cs.customers(id);
 
-ALTER TABLE order_items
+ALTER TABLE cs.order_items
 ADD CONSTRAINT fk_order
-FOREIGN KEY (order_id) REFERENCES orders(id);
+FOREIGN KEY (order_id) REFERENCES cs.orders(id);
 
-ALTER TABLE order_items
+ALTER TABLE cs.order_items
 ADD CONSTRAINT fk_product
-FOREIGN KEY (product_id) REFERENCES products(id);
+FOREIGN KEY (product_id) REFERENCES cs.products(id);
 
 -- CONSTRAINTS
-ALTER TABLE customers
+ALTER TABLE cs.customers
 ADD CONSTRAINT chk_birth_date CHECK (birth_date < CURRENT_DATE);
 
-ALTER TABLE order_items
+ALTER TABLE cs.order_items
 ADD CONSTRAINT chk_quantity CHECK (quantity > 0);
