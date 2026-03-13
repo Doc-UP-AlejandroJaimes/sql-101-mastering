@@ -19,3 +19,12 @@ INSERT INTO cs.products (name, usd_price) VALUES
 ('Power Bank 20000mAh', 39.9),
 ('Desk Lamp LED', 28.3),
 ('Screen Cleaning Kit', 11.2);
+
+
+-- | Product               | Category       | Price (USD) |
+-- | --------------------- | -------------- | ----------- |
+-- | Apple MacBook Air M3  | Laptop         | 1299        |
+-- | Samsung Galaxy S24    | Smartphone     | 799         |
+-- | Sony WH-1000XM5       | Headphones     | 399         |
+-- | Apple iPad Air (M2)   | Tablet         | 599         |
+-- | Logitech MX Master 3S | Wireless Mouse | 99          |
