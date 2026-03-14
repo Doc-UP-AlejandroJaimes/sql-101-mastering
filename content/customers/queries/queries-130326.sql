@@ -55,3 +55,27 @@ ADD COLUMN payment_method_id INT,
 ADD CONSTRAINT fk_payment_method_id
 FOREIGN KEY (payment_method_id)
 REFERENCES cs.payment_methods(id);
+
+
+-- FUNCTION TO UPDATE THE CATEGORIES IN PRODUCTS
+CREATE OR REPLACE FUNCTION update_category_id(product_id INT,
+                                             cat_id INT)
+RETURNS TEXT
+LANGUAGE plpgsql
+AS
+$$
+    DECLARE
+        rows_affected INTEGER;
+    BEGIN
+        UPDATE cs.products
+        SET category_id = cat_id
+        WHERE id = product_id;
+
+        GET DIAGNOSTICS rows_affected = ROW_COUNT;
+
+        RETURN 'Rows affected: '|| rows_affected;
+    END;
+$$;
+
+
+SELECT 
