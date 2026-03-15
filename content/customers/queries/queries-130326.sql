@@ -76,6 +76,3 @@ $$
         RETURN 'Rows affected: '|| rows_affected;
     END;
 $$;
-
-
-SELECT 

@@ -32,14 +32,17 @@ CREATE TABLE cs.orders (
     id SERIAL PRIMARY KEY,
     customer_id INT NOT NULL,
     order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    total DECIMAL(10, 2) NULL
+    total DECIMAL(10, 2) NULL,
+    payment_method_id INT NULL
+
 );
 
 CREATE TABLE cs.products (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     usd_price DECIMAL(10, 2) NOT NULL,
-    cop_price DECIMAL(10, 2) NULL
+    cop_price DECIMAL(10, 2) NULL,
+    category_id INT NULL
 );
 
 CREATE TABLE cs.order_items (
@@ -47,6 +50,18 @@ CREATE TABLE cs.order_items (
     order_id INT NOT NULL,
     product_id INT NOT NULL,
     quantity INT NOT NULL
+);
+
+CREATE TABLE cs.categories (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) UNIQUE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE cs.payment_methods (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) UNIQUE NOT NULL,
+    create_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- RELATIONSHIPS;
@@ -61,6 +76,14 @@ FOREIGN KEY (order_id) REFERENCES cs.orders(id);
 ALTER TABLE cs.order_items
 ADD CONSTRAINT fk_product
 FOREIGN KEY (product_id) REFERENCES cs.products(id);
+
+ALTER TABLE cs.products
+ADD CONSTRAINT fk_categories_id
+FOREIGN KEY (category_id) REFERENCES cs.categories(id);
+
+ALTER TABLE cs.orders
+ADD CONSTRAINT fk_payment_method_id
+FOREIGN KEY (payment_method_id) REFERENCES cs.payment_methods(id);
 
 -- CONSTRAINTS
 ALTER TABLE cs.customers
