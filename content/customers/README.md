@@ -1,7 +1,11 @@
 # Clean Execution | Customers DB
 
-## Last Updated
-- 14 March 2026
+> Created : 14 March 2026
+## Version Historial
+|Autor|Description|Date|
+|--|---|---|
+|Juan Alejandro Carrillo Jaimes| First version of document.| 14 March 2026
+|Juan Alejandro Carrillo Jaimes| Update with separate schema and real information| 20 March 2026
 
 ## Steps
 1. Delete all artifacts and objects created. Use the script `scripts/01-delete-objects.sql` if the name of the objects dont matching with yours scripts, please feel free to update this names for the correct objects that have been you created.

@@ -1,4 +1,4 @@
-INSERT INTO cs.payment_methods (name) VALUES
+INSERT INTO ctg.payment_methods (name) VALUES
 ('Cash'),
 ('Credit Card'),
 ('Debit Card'),

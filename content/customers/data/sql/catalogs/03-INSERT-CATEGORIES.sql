@@ -1,0 +1,22 @@
+INSERT INTO ctg.categories (name)
+VALUES
+    ('Electrónica'),
+    ('Computadores y Laptops'),
+    ('Periféricos'),
+    ('Almacenamiento'),
+    ('Audio y Sonido'),
+    ('Telefonía Móvil'),
+    ('Cámaras y Fotografía'),
+    ('Impresoras y Escáneres'),
+    ('Redes y Conectividad'),
+    ('Monitores y Pantallas'),
+    ('Accesorios de Oficina'),
+    ('Gaming y Videojuegos'),
+    ('Wearables y Smartwatches'),
+    ('Televisores'),
+    ('Electrodomésticos'),
+    ('Iluminación Inteligente'),
+    ('Seguridad y Vigilancia'),
+    ('Energía y Baterías'),
+    ('Software y Licencias'),
+    ('Realidad Virtual y Aumentada');
