@@ -1,56 +1,205 @@
 # Clean Execution | Customers DB
 
-> Created : 14 March 2026
-## Version Historial
-|Autor|Description|Date|
-|--|---|---|
-|Juan Alejandro Carrillo Jaimes| First version of document.| 14 March 2026
-|Juan Alejandro Carrillo Jaimes| Update with separate schema and real information| 20 March 2026
+> Created: 14 March 2026
 
-## Steps
-1. Delete all artifacts and objects created. Use the script `scripts/01-delete-objects.sql` if the name of the objects dont matching with yours scripts, please feel free to update this names for the correct objects that have been you created.
-2. Create the tables with their constraints located in the ddl file. Use the script `scripts/02-ddl-customers.sql`
-You can check with this query, that tables have been created.
-   ```sql
-   SELECT
-      tablename
-   FROM pg_catalog.pg_tables
-   WHERE schemaname = 'cs'
-   ORDER BY tablename
-   ```
-3. Create the functions and triggers, to the process located in the file `scripts/03-functions_and_triggers.sql`. I highly recommend execute statements one by one.
-4. Insert data in this order.
-   1. First part
-      1. `data/01-cs.customers.sql`
-      2. `data/02-cs.products.sql`
-      3. `data/07-cs.categories.sql`
-      4. `data/08-cs.payment_methods.sql`
-      5. `data/03-cs.orders.sql`
-      6. `data/04-cs.order_items.sql`
-   2. Second part
-      1. `data/05-cs.products2.sql`
-      2. `data/06-cs.order_items2.sql`
-      3. `data/09-updates-cs.products_categories.sql`
-      4. `data/10-cs.update_orders.sql`
+## Version History
 
-5. Execute the function to update usd to cop.
+| Author                          | Description                                      | Date          |
+|---------------------------------|--------------------------------------------------|---------------|
+| Juan Alejandro Carrillo Jaimes  | First version of document                        | 14 March 2026 |
+| Juan Alejandro Carrillo Jaimes  | Update with separate schema and real information | 20 March 2026 |
+
+---
+
+## Project Structure
+
+```
+customers/
+├── data/
+│   ├── raw/
+│   └── sql/
+│       ├── catalogs/
+│       │   ├── 01-INSERT-DEPARTMENTS.sql
+│       │   ├── 02-INSERT-MUNICIPALITIES.sql
+│       │   ├── 03-INSERT-CATEGORIES.sql
+│       │   ├── 04-INSERT-PRODUCTS.sql
+│       │   └── 05-PAYMENT-METHODS.sql
+│       ├── customers/
+│       │   ├── addresses_20260320.sql
+│       │   └── customers_20260320.sql
+│       ├── payments/
+│       │   ├── orders_20260320.sql
+│       │   └── orders_items_20260320.sql
+│       └── shipments/
+│           ├── 06-INSERT-SHIP-COMPANY.sql
+│           └── shipment_orders_20260320.sql
+├── queries/
+└── scripts/
+    ├── ddl/
+    │   ├── 01-ddl-customers.sql
+    │   ├── 02-ddl-ctg.sql
+    │   ├── 03-ddl-cs.sql
+    │   ├── 04-ddl-pay.sql
+    │   └── 05-ddl-ship.sql
+    ├── functions/
+    │   ├── ctg_functions.sql
+    │   └── pay_functions.sql
+    ├── python-scripts/
+    │   ├── colombian_addr_generator.py
+    │   ├── generate_dummy_data.py
+    │   ├── helper_functions.py
+    │   └── shipment_generator.py
+    ├── triggers/
+    │   ├── ctg_triggers.sql
+    │   ├── generic_triggers.sql
+    │   └── ship_triggers.sql
+    ├── views/
+    │   ├── 01-views.sql
+    │   └── queries-100326.sql
+    ├── 01-delete-objects.sql
+    ├── 02-ddl-customers.sql
+    └── 03-functions_and_triggers.sql
+```
+
+---
+
+## Schema Architecture
+
+The database is organized in five schemas, each with a clearly delimited responsibility.
+
+| Schema      | Responsibility                                              |
+|-------------|-------------------------------------------------------------|
+| `ctg`       | Catalogs: departments, municipalities, categories, payment methods |
+| `cs`        | Core: customers, addresses, products, orders, order items   |
+| `pay`       | Payments: orders and order items with payment method reference |
+| `ship`      | Shipments: shipping companies and shipment orders           |
+| `customers` | Master database owner and entry point                       |
+
+---
+
+## Execution Steps
+
+### 1. Clean environment
+
+Drop all existing objects before a fresh execution.
+
+```sql
+-- scripts/01-delete-objects.sql
+-- Update object names if they differ from your local setup.
+```
+
+### 2. Create schemas and tables
+
+Execute DDL scripts in the following order to respect foreign key dependencies.
+
+```sql
+-- scripts/ddl/01-ddl-customers.sql
+-- scripts/ddl/02-ddl-ctg.sql
+-- scripts/ddl/03-ddl-cs.sql
+-- scripts/ddl/04-ddl-pay.sql
+-- scripts/ddl/05-ddl-ship.sql
+```
+
+Verify table creation:
+
+```sql
+SELECT tablename
+FROM pg_catalog.pg_tables
+WHERE schemaname = 'cs'
+ORDER BY tablename;
+```
+
+### 3. Create functions and triggers
+
+Execute statements one by one to isolate any errors.
+
+```sql
+-- scripts/functions/ctg_functions.sql
+-- scripts/functions/pay_functions.sql
+-- scripts/triggers/ctg_triggers.sql
+-- scripts/triggers/generic_triggers.sql
+-- scripts/triggers/ship_triggers.sql
+-- scripts/03-functions_and_triggers.sql
+```
+
+### 4. Insert data
+
+#### Part 1 — Catalogs and core entities
+
+```
+data/sql/catalogs/01-INSERT-DEPARTMENTS.sql
+data/sql/catalogs/02-INSERT-MUNICIPALITIES.sql
+data/sql/catalogs/03-INSERT-CATEGORIES.sql
+data/sql/catalogs/04-INSERT-PRODUCTS.sql
+data/sql/catalogs/05-PAYMENT-METHODS.sql
+data/sql/customers/customers_20260320.sql
+data/sql/customers/addresses_20260320.sql
+data/sql/payments/orders_20260320.sql
+data/sql/payments/orders_items_20260320.sql
+```
+
+#### Part 2 — Shipments and updates
+
+```
+data/sql/shipments/06-INSERT-SHIP-COMPANY.sql
+data/sql/shipments/shipment_orders_20260320.sql
+```
+
+### 5. Execute price conversion
+
+Converts all `usd_price` values to `cop_price` using a fixed exchange rate.
 
 ```sql
 SELECT cs.convert_usd_to_cop();
--- Rows affected: 46
+-- Expected: Rows affected: 46
 ```
-6. Execute the function to calculate total order.
+
+### 6. Calculate order totals
+
+Populates the `total` field in `cs.orders` based on order items and product prices.
 
 ```sql
 SELECT cs.update_total_orders();
--- Rows affected: 250
+-- Expected: Rows affected: 250
 ```
 
-7. Check that we dont have total values in null
+### 7. Validate totals
+
 ```sql
-SELECT
-   COUNT(*)
+SELECT COUNT(*)
 FROM cs.orders
 WHERE total IS NULL;
--- 0
+-- Expected: 0
 ```
+
+---
+
+## Python Scripts
+
+Data generation utilities used to populate the database with synthetic data.
+
+| Script                        | Responsibility                                              |
+|-------------------------------|-------------------------------------------------------------|
+| `colombian_addr_generator.py` | Generates Colombian addresses with municipality codes       |
+| `generate_dummy_data.py`      | Generates customers, orders and order items                 |
+| `helper_functions.py`         | Shared utilities: ID generation, deduplication, formatting  |
+| `shipment_generator.py`       | Generates shipment orders with tracking codes               |
+
+---
+
+## Views
+
+Reusable queries encapsulating common join logic across schemas.
+
+```sql
+-- scripts/views/01-views.sql
+```
+
+---
+
+## Notes
+
+- The `cop_price` field in `cs.products` is always populated via `cs.convert_usd_to_cop()`, never manually.
+- The `total` field in `cs.orders` is always populated via `cs.update_total_orders()` or the associated trigger, never manually.
+- The `shipment_orders` table references `pay.orders` through `order_id`. The relationship is enforced by a `BEFORE INSERT` trigger that validates order existence and prevents duplicate shipment assignments.
+- The `updated_at` field in `cs.addresses` and `ship.shipment_orders` is maintained automatically by the `shared.trg_set_updated_at()` trigger.
