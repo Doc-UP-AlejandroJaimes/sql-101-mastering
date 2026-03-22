@@ -67,6 +67,15 @@ customers/
 
 The database is organized in five schemas, each with a clearly delimited responsibility.
 
+Create the schemas with this script
+```sql
+-- CREATE SCHEMA
+CREATE SCHEMA cs AUTHORIZATION admin;
+CREATE SCHEMA pay AUTHORIZATION admin;
+CREATE SCHEMA ship AUTHORIZATION admin;
+CREATE SCHEMA ctg AUTHORIZATION admin;
+```
+
 | Schema      | Responsibility                                              |
 |-------------|-------------------------------------------------------------|
 | `ctg`       | Catalogs: departments, municipalities, categories, payment methods |
