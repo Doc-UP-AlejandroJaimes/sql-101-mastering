@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import random
 import uuid
+import re
 
 
 class HelperFunctions:
@@ -197,5 +198,77 @@ class HelperFunctions:
                 })
 
         return pd.DataFrame(rows, columns=["order_id", "product_id", "quantity"])
+
+    @staticmethod
+    def clean_razon_social(name:str) -> str:
+        name = re.sub(r"[\'`]", "", name)
+        return name.strip()
+    
+    @staticmethod
+    def load_customers_id(sql_path: str) -> list[str]:
+        pattern = re.compile(r"INSERT INTO cs\.customers[^;]+", re.DOTALL)
+        row_pattern = re.compile(r"\(\s*'(\d+)'")
+        
+        with open(sql_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        
+        match = pattern.search(content)
+        if not match:
+            return []
+        
+        return row_pattern.findall(match.group())
+    
+    @staticmethod
+    def load_orders(sql_path: str) -> list[str]:
+        pattern = re.compile(r"\(\s*'(ORD[^']+)'")
+        with open(sql_path, "r", encoding="utf-8") as f:
+            return pattern.findall(f.read())
+    
+    @staticmethod
+    def drop_duplicates_from_list(dups: list, field:str, df: pd.DataFrame) -> pd.DataFrame:
+        df_filtered = df[~df[field].astype(str).isin(dups)]
+        print(f"Records originales : {len(df)}")
+        print(f"Records deleted : {len(df) - len(df_filtered)}")
+        print(f"Records remaining  : {len(df_filtered)}")
+        return df_filtered
+    
+    @staticmethod
+    def dedup_email(df: pd.DataFrame, email_col: str = 'email') -> pd.DataFrame:
+        df = df.copy()
+        mask = df.duplicated(subset=[email_col], keep='first')
+        df.loc[mask, email_col] = df.loc[mask, email_col].apply(
+            lambda x: x.replace('@', f'.{uuid.uuid4().hex[:4]}@')
+        )
+        return df
+    
+    @staticmethod
+    def load_customers_email(sql_path: str) -> list[str]:
+        pattern = re.compile(r"INSERT INTO cs\.customers[^;]+", re.DOTALL)
+        row_pattern = re.compile(r"\(\s*'[^']+',\s*'[^']+',\s*'[^']+',\s*'[^']+',\s*'([^']+@[^']+)'")
+        
+        with open(sql_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        
+        match = pattern.search(content)
+        if not match:
+            return []
+        
+        return row_pattern.findall(match.group())
+
+    @staticmethod
+    def dedup_email_from_list(existing_emails: list, df: pd.DataFrame, 
+                            email_col: str = 'email') -> pd.DataFrame:
+        df = df.copy()
+        existing_set = set(existing_emails)
+        
+        mask = df[email_col].isin(existing_set)
+        df.loc[mask, email_col] = df.loc[mask, email_col].apply(
+            lambda x: x.replace('@', f'.{uuid.uuid4().hex[:4]}@')
+        )
+        
+        print(f"Records originals  : {len(df)}")
+        print(f"Records updateds : {mask.sum()}")
+        
+        return df
 
 

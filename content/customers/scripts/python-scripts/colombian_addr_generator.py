@@ -111,12 +111,18 @@ class ColombianAddressGenerator:
         """
 
         df = df.copy()
-
+        if mun_col not in df.columns:
+            df[mun_col] = None
+            
         for col in ("detail", "additional_comments"):
             if col not in df.columns:
                 df[col] = None
 
         def _enrich_row(row):
+            if mun_col in row.index and pd.notna(row[mun_col]):
+                mun = row[mun_col]
+            else:
+                mun = random.choice(self.codes)
             mun  = row[mun_col] if pd.notna(row[mun_col]) else random.choice(self.codes)
             has_street = pd.notna(row[street_col]) and str(row[street_col]).strip() != ""
 
