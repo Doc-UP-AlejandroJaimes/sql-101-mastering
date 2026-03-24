@@ -102,7 +102,6 @@ Drop all existing objects before a fresh execution.
 Execute DDL scripts in the following order to respect foreign key dependencies.
 
 ```sql
--- scripts/ddl/01-ddl-customers.sql
 -- scripts/ddl/02-ddl-ctg.sql
 -- scripts/ddl/03-ddl-cs.sql
 -- scripts/ddl/04-ddl-pay.sql
