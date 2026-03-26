@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PostgreSQL EXPLAIN Visualizer</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg2: #161b27;
+    --bg3: #1e2535;
+    --bg4: #252d40;
+    --border: #2a3350;
+    --border2: #3a4560;
+    --text: #e2e8f0;
+    --text2: #8892a4;
+    --text3: #55627a;
+    --mono: 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    --sans: 'Inter', system-ui, sans-serif;
+    --green: #22c55e;
+    --green-bg: #052010;
+    --green-border: #134d25;
+    --yellow: #f59e0b;
+    --yellow-bg: #1a1100;
+    --yellow-border: #4a3000;
+    --red: #ef4444;
+    --red-bg: #1a0505;
+    --red-border: #4a1010;
+    --blue: #60a5fa;
+    --purple: #a78bfa;
+    --teal: #2dd4bf;
+    --accent: #3b82f6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ── Header ── */
+  header {
+    padding: 20px 28px 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .logo {
+    width: 32px; height: 32px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; color: #fff;
+    flex-shrink: 0;
+  }
+  h1 { font-size: 16px; font-weight: 600; color: var(--text); }
+  .subtitle { font-size: 12px; color: var(--text3); margin-top: 1px; }
+
+  /* ── Main layout ── */
+  .main { display: grid; grid-template-columns: 380px 1fr; min-height: calc(100vh - 73px); }
+  .panel-left {
+    border-right: 1px solid var(--border);
+    padding: 20px;
+    display: flex; flex-direction: column; gap: 14px;
+    background: var(--bg2);
+    overflow-y: auto;
+  }
+  .panel-right {
+    padding: 20px;
+    overflow-y: auto;
+    background: var(--bg);
+  }
+
+  /* ── Form elements ── */
+  label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: var(--text3); display: block; margin-bottom: 5px; }
+  textarea, input[type=text] {
+    width: 100%;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--text);
+    resize: vertical;
+    line-height: 1.55;
+    transition: border-color .15s;
+  }
+  textarea:focus, input:focus { outline: none; border-color: var(--accent); }
+  #input { height: 160px; }
+  #query-input { height: 90px; font-size: 12px; }
+
+  .row-btns { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity .15s;
+  }
+  .btn:hover { opacity: .85; }
+  .btn-ghost {
+    background: transparent;
+    border-color: var(--border2);
+    color: var(--text2);
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+  .btn-ghost:hover { background: var(--bg3); color: var(--text); }
+
+  .strip-note {
+    font-size: 11px;
+    color: var(--text3);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .strip-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    flex-shrink: 0;
+  }
+
+  /* ── Error ── */
+  .err { font-size: 12px; color: var(--red); margin-top: 2px; }
+
+  /* ── Badges ── */
+  .badge {
+    display: inline-block;
+    font-size: 10px; font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .ok   { background: var(--green-bg); color: var(--green);  border: 1px solid var(--green-border); }
+  .warn { background: var(--yellow-bg);color: var(--yellow); border: 1px solid var(--yellow-border); }
+  .alert{ background: var(--red-bg);   color: var(--red);    border: 1px solid var(--red-border); }
+
+  /* ── Legend ── */
+  .legend {
+    display: flex; gap: 14px; align-items: center;
+    margin-bottom: 12px; flex-wrap: wrap;
+  }
+  .leg { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text2); }
+  .leg-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* ── Cost bars ── */
+  .cost-bars { margin-bottom: 16px; }
+  .cost-bar-title { font-size: 11px; color: var(--text3); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .05em; }
+  .cb-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .cb-name { font-family: var(--mono); font-size: 11px; color: var(--text2); width: 160px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cb-bg { flex: 1; height: 8px; background: var(--bg4); border-radius: 4px; overflow: hidden; }
+  .cb-fill { height: 100%; border-radius: 4px; transition: width .4s; }
+  .cb-val { font-family: var(--mono); font-size: 11px; color: var(--text3); min-width: 38px; text-align: right; }
+
+  /* ── Tree nodes ── */
+  .tree { display: flex; flex-direction: column; gap: 3px; }
+  .node-row { display: flex; align-items: stretch; }
+  .node-indent { display: flex; }
+  .indent-seg { width: 20px; flex-shrink: 0; position: relative; }
+  .indent-seg::before {
+    content: '';
+    position: absolute;
+    left: 10px; top: 0; bottom: 0;
+    width: 1px;
+    background: var(--border);
+  }
+
+  .node-card {
+    flex: 1;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    padding: 9px 13px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    min-width: 0;
+  }
+  .node-card:hover { border-color: var(--border2); background: var(--bg3); }
+  .node-card.active { border-color: var(--accent); background: var(--bg3); }
+  .node-card.highlighted { border-color: var(--purple); }
+
+  .node-top {
+    display: flex; align-items: center;
+    justify-content: space-between; gap: 8px;
+    flex-wrap: wrap;
+  }
+  .node-name { font-family: var(--mono); font-weight: 600; font-size: 12.5px; color: var(--text); }
+  .node-pills { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+  .pill-cost { font-family: var(--mono); font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border2); color: var(--text3); }
+  .pill-rows { font-family: var(--mono); font-size: 10px; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border2); color: var(--text3); }
+  .node-extra { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ── Detail panel ── */
+  .detail {
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    padding: 16px;
+    margin-top: 16px;
+  }
+  .detail-name { font-family: var(--mono); font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+  .detail-meta { font-size: 11px; color: var(--text3); margin-bottom: 12px; }
+  .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .metric {
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    padding: 9px 11px;
+  }
+  .metric-label { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--text3); margin-bottom: 3px; }
+  .metric-val { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--text); }
+  .metric-rule { font-size: 11px; color: var(--text2); margin-top: 4px; line-height: 1.45; }
+  .verdict {
+    grid-column: 1 / -1;
+    border-radius: 8px;
+    padding: 10px 13px;
+    font-size: 12px;
+    line-height: 1.55;
+  }
+  .verdict.ok    { background: var(--green-bg);  color: #86efac; border: 1px solid var(--green-border); }
+  .verdict.warn  { background: var(--yellow-bg); color: #fcd34d; border: 1px solid var(--yellow-border); }
+  .verdict.alert { background: var(--red-bg);    color: #fca5a5; border: 1px solid var(--red-border); }
+
+  /* ── SQL clause highlight panel ── */
+  .sql-panel {
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    padding: 12px 14px;
+    margin-top: 10px;
+  }
+  .sql-panel-title { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--text3); margin-bottom: 6px; }
+  .sql-hl { font-family: var(--mono); font-size: 12px; line-height: 1.7; white-space: pre-wrap; word-break: break-all; }
+  .hl-active { background: rgba(167,139,250,.18); color: var(--purple); border-radius: 3px; padding: 0 2px; font-weight: 600; }
+
+  /* ── Empty state ── */
+  .empty {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    height: 340px; color: var(--text3);
+    text-align: center; gap: 10px;
+  }
+  .empty-icon { font-size: 36px; opacity: .3; }
+  .empty-text { font-size: 13px; }
+
+  /* ── Exec order label ── */
+  .exec-label {
+    font-size: 11px; color: var(--text3);
+    text-align: right; margin-bottom: 8px;
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="logo">PG</div>
+    <div>
+      <h1>PostgreSQL EXPLAIN Visualizer</h1>
+      <div class="subtitle">Árbol de ejecución · Alertas automáticas · Mapeo a cláusulas SQL</div>
+    </div>
+  </div>
+</header>
+
+<div class="main">
+  <!-- LEFT PANEL -->
+  <div class="panel-left">
+
+    <div>
+      <label>Query SQL original (opcional)</label>
+      <textarea id="query-input" placeholder="SELECT T2.name, T1.id, ROW_NUMBER() OVER (...)&#10;FROM pay.orders T1&#10;INNER JOIN cs.customers T2 ON ...&#10;GROUP BY T1.id, T2.name;"></textarea>
+    </div>
+
+    <div>
+      <label>Output de EXPLAIN / EXPLAIN VERBOSE / EXPLAIN ANALYZE</label>
+      <textarea id="input" placeholder='Pega aquí el output de EXPLAIN.&#10;&#10;Las comillas " del Beekeeper se eliminan automáticamente.&#10;&#10;Ejemplo:&#10;WindowAgg  (cost=2200.85..2566.63 rows=16258 width=70)&#10;  ->  Sort  (cost=2200.83..2241.47 rows=16258 width=62)&#10;        ->  HashAggregate ...'></textarea>
+      <div class="strip-note" style="margin-top:5px">
+        <span class="strip-dot"></span>
+        Las comillas dobles del Beekeeper se eliminan automáticamente
+      </div>
+    </div>
+
+    <div class="row-btns">
+      <button class="btn" onclick="parse()">Visualizar árbol</button>
+      <button class="btn btn-ghost" onclick="loadExample()">Cargar ejemplo</button>
+    </div>
+    <div id="err" class="err"></div>
+
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="panel-right" id="right">
+    <div class="empty">
+      <div class="empty-icon">&#9654;</div>
+      <div class="empty-text">Pega tu EXPLAIN y haz clic en<br><strong>Visualizar árbol</strong></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const EXAMPLE_EXPLAIN = `WindowAgg  (cost=2200.85..2566.63 rows=16258 width=70)
+  Output: t2.name, t1.customer_id_number, t1.id, row_number() OVER (?), t1.order_date
+  ->  Sort  (cost=2200.83..2241.47 rows=16258 width=62)
+        Output: t2.name, t1.customer_id_number, t1.id, t1.order_date
+        Sort Key: t1.customer_id_number, t1.order_date, t1.id
+        ->  HashAggregate  (cost=901.09..1063.67 rows=16258 width=62)
+              Output: t2.name, t1.customer_id_number, t1.id, t1.order_date
+              Group Key: t1.id, t2.name
+              ->  Hash Join  (cost=278.52..819.80 rows=16258 width=62)
+                    Output: t2.name, t1.id, t1.customer_id_number, t1.order_date
+                    Inner Unique: true
+                    Hash Cond: ((t1.customer_id_number)::text = (t2.id_number)::text)
+                    ->  Seq Scan on pay.orders t1  (cost=0.00..498.58 rows=16258 width=37)
+                          Output: t1.customer_id_number, t1.id, t1.order_date
+                    ->  Hash  (cost=186.01..186.01 rows=7401 width=34)
+                          Output: t2.name, t2.id_number
+                          ->  Seq Scan on cs.customers t2  (cost=0.00..186.01 rows=7401 width=34)
+                                Output: t2.name, t2.id_number`;
+
+const EXAMPLE_QUERY = `SELECT
+    T2.name AS customer,
+    T1.customer_id_number,
+    T1.id AS order_id,
+    ROW_NUMBER() OVER (
+        PARTITION BY T1.customer_id_number
+        ORDER BY T1.order_date ASC, T1.id ASC
+    ) AS nro_orden
+FROM pay.orders T1
+INNER JOIN cs.customers T2
+    ON T1.customer_id_number = T2.id_number
+GROUP BY T1.id, T2.name, T1.customer_id_number;`;
+
+function loadExample() {
+  document.getElementById('input').value = EXAMPLE_EXPLAIN;
+  document.getElementById('query-input').value = EXAMPLE_QUERY;
+  parse();
+}
+
+/* ── Strip Beekeeper quotes ── */
+function stripQuotes(text) {
+  return text
+    .split('\n')
+    .map(line => {
+      let l = line;
+      if (l.startsWith('"')) l = l.slice(1);
+      if (l.endsWith('"'))   l = l.slice(0, -1);
+      return l;
+    })
+    .join('\n');
+}
+
+/* ── Parser ── */
+function parseExplain(raw) {
+  const text = stripQuotes(raw);
+  const lines = text.split('\n');
+  const nodes = [];
+  const stack = [];
+  let lastNode = null;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.trim()) continue;
+    /* Skip footer/header lines that are not plan nodes */
+    if (/^\s*(Planning Time|Execution Time|JIT:|Functions:|Options:|Timing:|EXPLAIN\s)/i.test(line)) continue;
+    if (/^\s*(SELECT|INSERT|UPDATE|DELETE|WITH|EXPLAIN)/i.test(line) && !/cost=/.test(line)) continue;
+
+    const arrowMatch = line.match(/^(\s*)->\s+(.+)$/);
+    /* Root node: starts with a word and has (cost= somewhere */
+    const rootMatch  = !arrowMatch && line.match(/cost=/) ? line.match(/^(\s*)(\S.+?)\s+\(cost=/) : null;
+
+    if (arrowMatch || rootMatch) {
+      const indent = (arrowMatch || rootMatch)[1].length;
+      const rest   = arrowMatch ? arrowMatch[2] : line.trim();
+      const costM  = rest.match(/cost=([\d.]+)\.\.([\d.]+)/);
+      const rowsM  = rest.match(/rows=(\d+)/);
+      const widthM = rest.match(/width=(\d+)/);
+      let name = rest.split('(')[0].trim().replace(/^->\s*/, '');
+
+      /* actual rows from EXPLAIN ANALYZE — same line as cost */
+      const actualM = rest.match(/actual time=[\d.]+\.\.[\d.]+ rows=(\d+)/);
+      const loopsM  = rest.match(/loops=(\d+)/);
+      const loops   = loopsM ? parseInt(loopsM[1]) : 1;
+
+      const node = {
+        id: nodes.length,
+        name,
+        indent,
+        costStart: costM ? parseFloat(costM[1]) : 0,
+        costEnd:   costM ? parseFloat(costM[2]) : 0,
+        rows:  rowsM  ? parseInt(rowsM[1])  : 0,
+        width: widthM ? parseInt(widthM[1]) : 0,
+        extra: {},
+        children: []
+      };
+      if (actualM) node.extra.actualRows = parseInt(actualM[1]) * loops;
+
+      while (stack.length && stack[stack.length-1].indent >= indent) stack.pop();
+      if (stack.length) stack[stack.length-1].children.push(node);
+      else nodes.push(node);
+      stack.push(node);
+      lastNode = node;
+
+    } else if (lastNode) {
+      const t = line.trim();
+      if (t.startsWith('Sort Key:'))     lastNode.extra.sortKey    = t.replace('Sort Key:','').trim();
+      if (t.startsWith('Group Key:'))    lastNode.extra.groupKey   = t.replace('Group Key:','').trim();
+      if (t.startsWith('Hash Cond:'))    lastNode.extra.hashCond   = t.replace('Hash Cond:','').trim();
+      if (t.startsWith('Inner Unique:')) lastNode.extra.innerUnique= t.replace('Inner Unique:','').trim();
+      if (t.startsWith('Filter:'))       lastNode.extra.filter     = t.replace('Filter:','').trim();
+      if (t.startsWith('Index Cond:'))   lastNode.extra.indexCond  = t.replace('Index Cond:','').trim();
+      if (t.startsWith('Rows Removed:')) lastNode.extra.rowsRemoved= t.replace('Rows Removed by Filter:','').trim();
+      const actM = t.match(/actual time=[\d.]+\.\.[\d.]+ rows=(\d+)/);
+      if (actM) lastNode.extra.actualRows = parseInt(actM[1]);
+    }
+  }
+  return nodes[0] || null;
+}
+
+/* ── Clause mapping ── */
+const CLAUSE_MAP = {
+  windowagg:      { clause: 'ROW_NUMBER() / OVER()',        keywords: ['ROW_NUMBER','OVER','PARTITION BY','RANK','DENSE_RANK'] },
+  sort:           { clause: 'ORDER BY (dentro del OVER)',   keywords: ['ORDER BY','order_date','id ASC'] },
+  hashaggregate:  { clause: 'GROUP BY',                     keywords: ['GROUP BY'] },
+  groupaggregate: { clause: 'GROUP BY',                     keywords: ['GROUP BY'] },
+  'hash join':    { clause: 'INNER JOIN ... ON',            keywords: ['INNER JOIN','JOIN','ON'] },
+  'nested loop':  { clause: 'JOIN (nested)',                keywords: ['JOIN','ON'] },
+  'merge join':   { clause: 'JOIN (merge)',                 keywords: ['JOIN','ON'] },
+  'seq scan':     { clause: 'FROM / tabla escaneada',       keywords: ['FROM','WHERE'] },
+  'index scan':   { clause: 'WHERE / índice usado',         keywords: ['WHERE','INDEX'] },
+  'index only scan':{ clause: 'WHERE / índice covering',   keywords: ['WHERE'] },
+  hash:           { clause: 'Lado build del Hash Join',     keywords: ['JOIN'] },
+};
+
+function getClauseInfo(nodeName) {
+  const n = nodeName.toLowerCase();
+  for (const [key, val] of Object.entries(CLAUSE_MAP)) {
+    if (n.includes(key)) return val;
+  }
+  return { clause: 'Procesamiento interno', keywords: [] };
+}
+
+/* ── Analyzer ── */
+function analyze(node) {
+  const n = node.name.toLowerCase();
+  let level = 'ok', alerts = [], verdict = '';
+
+  if (n.includes('seq scan')) {
+    if (node.extra.filter) {
+      level = 'warn'; alerts.push('Seq Scan con Filter');
+      verdict = 'Lee toda la tabla y luego aplica el filtro en memoria. Un índice en la columna del Filter lo convertiría en Index Scan, eliminando las filas descartadas antes de leerlas.';
+    } else {
+      verdict = 'Sin cláusula WHERE activa sobre esta tabla. Leer todo es correcto aquí.';
+    }
+  }
+  else if (n.includes('hash join')) {
+    if (node.extra.innerUnique !== 'true') {
+      level = 'warn'; alerts.push('Inner Unique: false');
+      verdict = 'El lado derecho del join puede tener duplicados. Verifica la cardinalidad: si hay múltiples filas por clave en la tabla inner, el resultado se multiplicará.';
+    } else {
+      verdict = 'Inner Unique: true — join sin multiplicación de filas. Correcto.';
+    }
+    if (node.extra.hashCond && node.extra.hashCond.includes('::text')) {
+      if (level === 'ok') level = 'warn';
+      alerts.push('Cast ::text en join');
+      verdict += ' Hay un cast de tipos en la condición del join — los tipos de columna no coinciden exactamente. Esto puede impedir el uso de índices en la columna de join.';
+    }
+  }
+  else if (n.includes('nested loop')) {
+    level = 'warn'; alerts.push('Nested Loop');
+    verdict = 'Por cada fila de la tabla exterior busca en la interior. Sin índice en el lado interior es O(n²). Verifica que el nodo hijo use Index Scan.';
+  }
+  else if (n.includes('hashaggregate') || n.includes('groupaggregate')) {
+    level = 'warn'; alerts.push('Verificar GROUP BY');
+    verdict = `GROUP BY sobre: ${node.extra.groupKey || '?'}. Si alguna columna del Group Key es PK de su tabla, el agregado nunca colapsa filas y es un costo innecesario. Filas entrada = filas salida sería la señal.`;
+  }
+  else if (n.includes('sort')) {
+    level = 'warn'; alerts.push('Sort en memoria probable');
+    verdict = `Ordena por: ${node.extra.sortKey || '?'}. Si no existe un índice con exactamente ese orden de columnas, el sort ocurre en memoria (o disco si supera work_mem). Un índice en (${node.extra.sortKey || '...'}) eliminaría este nodo.`;
+  }
+  else if (n.includes('windowagg')) {
+    verdict = 'Nodo de función de ventana. Normal. Para optimizarlo necesitas un índice en las columnas del PARTITION BY + ORDER BY del OVER().';
+  }
+  else if (n.includes('index only scan')) {
+    verdict = 'Index Only Scan: lee solo el índice, sin tocar la tabla. Óptimo.';
+  }
+  else if (n.includes('index scan')) {
+    verdict = 'Index Scan: usa índice. Eficiente para consultas con filtro selectivo.';
+  }
+  else {
+    verdict = 'Nodo de soporte (construcción de estructura interna). Revisa sus nodos hijos.';
+  }
+
+  if (node.extra.actualRows !== undefined) {
+    const ratio = node.rows > 0 ? node.extra.actualRows / node.rows : 1;
+    if (ratio > 10 || ratio < 0.1) {
+      level = 'alert'; alerts.unshift('Estimación errónea');
+      verdict = `PROBLEMA: PostgreSQL estimó ${node.rows.toLocaleString()} filas pero la realidad fue ${node.extra.actualRows.toLocaleString()} (diferencia ×${Math.round(Math.max(ratio, 1/ratio))}). Esto causa que el planificador tome decisiones incorrectas en todos los nodos superiores. Solución: ejecutar ANALYZE en la tabla.`;
+    }
+  }
+
+  return { level, alerts, verdict };
+}
+
+/* ── Flatten ── */
+function flatten(node, list = []) {
+  list.push(node);
+  for (const c of node.children) flatten(c, list);
+  return list;
+}
+
+/* ── SQL highlighter ── */
+function highlightQuery(query, keywords) {
+  if (!query || !keywords.length) return escHtml(query || '');
+  let result = escHtml(query);
+  for (const kw of keywords) {
+    const escaped = escHtml(kw).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    result = result.replace(new RegExp('(' + escaped + ')', 'gi'),
+      '<span class="hl-active">$1</span>');
+  }
+  return result;
+}
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ── Render ── */
+let allNodes = [];
+let selectedId = null;
+let currentRoot = null;
+let currentQuery = '';
+
+function parse() {
+  const raw   = document.getElementById('input').value.trim();
+  const query = document.getElementById('query-input').value.trim();
+  const err   = document.getElementById('err');
+  const right = document.getElementById('right');
+  err.textContent = '';
+  selectedId = null;
+  currentQuery = query;
+
+  if (!raw) { err.textContent = 'Pega el output de EXPLAIN primero.'; return; }
+
+  const root = parseExplain(raw);
+  if (!root) {
+    err.textContent = 'No se pudo parsear. Verifica que sea output de EXPLAIN de PostgreSQL (texto plano).';
+    return;
+  }
+  currentRoot = root;
+  allNodes = flatten(root);
+  renderRight(right);
+}
+
+function renderRight(container) {
+  const flat = allNodes;
+  const maxCost = Math.max(...flat.map(n => n.costEnd), 1);
+
+  let html = '';
+
+  /* Cost bars */
+  html += '<div class="cost-bars">';
+  html += '<div class="cost-bar-title">Costo por nodo (relativo al total)</div>';
+  for (const n of flat) {
+    const pct = Math.round((n.costEnd / maxCost) * 100);
+    const a = analyze(n);
+    const color = a.level === 'ok' ? '#22c55e' : a.level === 'warn' ? '#f59e0b' : '#ef4444';
+    html += `<div class="cb-row">
+      <div class="cb-name" title="${escHtml(n.name)}">${escHtml(n.name)}</div>
+      <div class="cb-bg"><div class="cb-fill" style="width:${pct}%;background:${color}"></div></div>
+      <div class="cb-val">${n.costEnd.toFixed(0)}</div>
+    </div>`;
+  }
+  html += '</div>';
+
+  /* Legend + exec order */
+  html += `<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+    <div class="legend">
+      <div class="leg"><div class="leg-dot" style="background:#22c55e"></div>sin alerta</div>
+      <div class="leg"><div class="leg-dot" style="background:#f59e0b"></div>revisar</div>
+      <div class="leg"><div class="leg-dot" style="background:#ef4444"></div>problema</div>
+    </div>
+    <div class="exec-label">Ejecución: de abajo hacia arriba &#8593;</div>
+  </div>`;
+
+  /* Tree */
+  html += '<div class="tree" id="tree-container">';
+  html += renderNode(currentRoot, 0);
+  html += '</div>';
+
+  /* Detail placeholder */
+  html += '<div id="detail-area"></div>';
+
+  container.innerHTML = html;
+
+  /* Attach click handlers */
+  container.querySelectorAll('.node-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const id = parseInt(card.dataset.id);
+      selectedId = selectedId === id ? null : id;
+      refreshSelection();
+    });
+  });
+}
+
+function renderNode(node, depth) {
+  const a = analyze(node);
+  const indentHtml = Array(depth).fill('<div class="indent-seg"></div>').join('');
+  const extraParts = [];
+  if (node.extra.sortKey)     extraParts.push('sort: ' + node.extra.sortKey);
+  if (node.extra.groupKey)    extraParts.push('group: ' + node.extra.groupKey);
+  if (node.extra.hashCond)    extraParts.push('cond: ' + node.extra.hashCond);
+  if (node.extra.filter)      extraParts.push('filter: ' + node.extra.filter);
+  if (node.extra.innerUnique) extraParts.push('inner unique: ' + node.extra.innerUnique);
+  if (node.extra.actualRows !== undefined) extraParts.push('actual rows: ' + node.extra.actualRows.toLocaleString());
+
+  const badgeHtml = a.alerts.length
+    ? `<span class="badge ${a.level}">${escHtml(a.alerts[0])}</span>`
+    : `<span class="badge ${a.level}">ok</span>`;
+
+  let html = `<div class="node-row">
+    <div class="node-indent">${indentHtml}</div>
+    <div class="node-card" data-id="${node.id}" id="nc-${node.id}">
+      <div class="node-top">
+        <span class="node-name">${escHtml(node.name)}</span>
+        <div class="node-pills">
+          <span class="pill-cost">cost ${node.costEnd.toFixed(2)}</span>
+          <span class="pill-rows">${node.rows.toLocaleString()} filas</span>
+          ${badgeHtml}
+        </div>
+      </div>
+      ${extraParts.length ? `<div class="node-extra">${escHtml(extraParts.join(' · '))}</div>` : ''}
+    </div>
+  </div>`;
+
+  for (const child of node.children) {
+    html += renderNode(child, depth + 1);
+  }
+  return html;
+}
+
+function refreshSelection() {
+  /* Update active class */
+  document.querySelectorAll('.node-card').forEach(card => {
+    const id = parseInt(card.dataset.id);
+    card.classList.toggle('active', id === selectedId);
+  });
+
+  const detailArea = document.getElementById('detail-area');
+  if (selectedId === null) { detailArea.innerHTML = ''; return; }
+
+  const node = allNodes.find(n => n.id === selectedId);
+  if (!node) { detailArea.innerHTML = ''; return; }
+
+  const a = analyze(node);
+  const clauseInfo = getClauseInfo(node.name);
+
+  const entries = [
+    ['Cost startup', node.costStart.toFixed(2),
+     'Costo hasta devolver la primera fila. Alto = hace trabajo previo antes de emitir resultados.'],
+    ['Cost total', node.costEnd.toFixed(2),
+     'Costo completo. Compara con el nodo raíz para ver qué % del presupuesto consume este nodo.'],
+    ['Rows estimadas', node.rows.toLocaleString(),
+     'Estimación del planificador. Con EXPLAIN ANALYZE verás las filas reales.'],
+    ['Width', node.width + ' bytes/fila',
+     'Bytes promedio por fila. Alto (> 200) sugiere columnas innecesarias en el SELECT.'],
+  ];
+  if (node.extra.actualRows !== undefined) {
+    entries.push(['Rows reales', node.extra.actualRows.toLocaleString(),
+      'Filas reales (EXPLAIN ANALYZE). Si difiere mucho del estimado, ejecuta ANALYZE en la tabla.']);
+  }
+
+  const metricsHtml = entries.map(([l,v,r]) =>
+    `<div class="metric">
+       <div class="metric-label">${l}</div>
+       <div class="metric-val">${v}</div>
+       <div class="metric-rule">${r}</div>
+     </div>`
+  ).join('');
+
+  /* SQL highlight panel */
+  let sqlPanelHtml = '';
+  if (currentQuery) {
+    const highlighted = highlightQuery(currentQuery, clauseInfo.keywords);
+    sqlPanelHtml = `
+      <div class="sql-panel">
+        <div class="sql-panel-title">Cláusula SQL relacionada: <strong style="color:var(--purple)">${escHtml(clauseInfo.clause)}</strong></div>
+        <div class="sql-hl">${highlighted}</div>
+      </div>`;
+  } else {
+    sqlPanelHtml = `
+      <div class="sql-panel">
+        <div class="sql-panel-title">Cláusula SQL relacionada</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:4px">Pega tu query SQL en el panel izquierdo para ver qué parte del código genera este nodo.</div>
+        <div style="font-size:12px;color:var(--purple);margin-top:6px">&#8594; ${escHtml(clauseInfo.clause)}</div>
+      </div>`;
+  }
+
+  detailArea.innerHTML = `
+    <div class="detail">
+      <div class="detail-name">${escHtml(node.name)}</div>
+      <div class="detail-meta">Profundidad ${node.indent} &nbsp;·&nbsp; ${node.children.length} nodo(s) hijo(s) &nbsp;·&nbsp; Cláusula: ${escHtml(clauseInfo.clause)}</div>
+      <div class="metrics-grid">
+        ${metricsHtml}
+        <div class="verdict ${a.level}">${a.verdict}</div>
+      </div>
+      ${sqlPanelHtml}
+    </div>`;
+}
+</script>
+</body>
+</html>
