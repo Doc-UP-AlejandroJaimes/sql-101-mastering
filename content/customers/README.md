@@ -10,6 +10,7 @@
 | Juan Alejandro Carrillo Jaimes | Update with separate schema and real information | 20 March 2026 |
 | Juan Alejandro Carrillo Jaimes | Additional data generated for customers, addresses, orders, order items and shipment orders | 22 March 2026 |
 | Juan Alejandro Carrillo Jaimes | Additional data generated for orders, order items and shipment orders | 23 March 2026 |
+| Juan Alejandro Carrillo Jaimes | Additional data generated for orders, order items and shipment orders. Additional Bulk Information Process | 28 March 2026 |
 
 ---
 
@@ -181,6 +182,18 @@ data/sql/payments/orders_variety_20260323.sql
 data/sql/payments/orders_items_variety_20260323.sql
 data/sql/payments/orders_update_20260323.sql
 data/sql/shipments/shipment_orders_variety_20260323.sql
+```
+
+### Delta 20260328
+
+Additional data generated for orders and shipment orders.
+
+```
+data/sql/customers/customers_20260328.sql
+data/sql/customers/addresses_20260328.sql
+data/sql/payments/orders_20260328.sql
+data/sql/payments/orders_items_20260328.sql
+data/sql/shipments/shipment_orders_20260328.sql
 ```
 
 After each delta, re-run the totals function and validate:

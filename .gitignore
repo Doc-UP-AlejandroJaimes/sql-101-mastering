@@ -82,3 +82,6 @@ content/fintech-accelator/data/sql/SQL-Data
 content/fintech-accelator/scripts/pipelines/create-fake-data/reproduce_transactions/
 
 content/smart-health/data/sql/
+
+# Customers bulk loads
+content/customers/data/sql/bulk-load/
