@@ -36,15 +36,15 @@ logger = logging.getLogger(__name__)
 class SQLInsertPipeline:
 
     _STANDARD_SQL_FILES = [
-        #'customers/customers_20260328.sql',
-        #'customers/addresses_20260328.sql',
-        #'payments/orders_20260328.sql',
-        #'payments/orders_items_20260328.sql',
+        'customers/customers_20260328.sql',
+        'customers/addresses_20260328.sql',
+        'payments/orders_20260328.sql',
+        'payments/orders_items_20260328.sql',
         'shipments/shipment_orders_20260328.sql'
     ]
     _BULK_LOAD_SQL_FILES = [
-        #'bulk-load/orders_variety_c20260328_bulk_batches.sql',
-        #'bulk-load/orders_items_variety_c20260328_bulk_batches.sql',
+        'bulk-load/orders_variety_c20260328_bulk_batches.sql',
+        'bulk-load/orders_items_variety_c20260328_bulk_batches.sql',
         'bulk-load/shipment_orders_variety_c20260328_bulk_batches.sql'
     ]
 

@@ -1,0 +1,9 @@
+-- CREATE TABLES RELATED TO THE CATALOG
+
+-- DOCUMENT TYPES
+CREATE TABLE ctg.document_types (
+    code VARCHAR(10) PRIMARY KEY,
+    description VARCHAR(100) UNIQUE NOT NULL,
+    abbreviation VARCHAR(5)
+);
+
