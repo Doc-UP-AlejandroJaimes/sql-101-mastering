@@ -9,6 +9,8 @@ LIMIT 5;
 -- los programas de Ing Sistemas 
 -- y vayan en 5to semestre o superior
 
+
+
 -- Obtener el nombre completo y el correo
 -- de los profesores de la Universidad.
 -- ||' '||
