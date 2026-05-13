@@ -40,3 +40,44 @@ ORDER BY T2.name;
 -- oferta de curso asignada.
 -- Ordenar por nombre del edificio y luego por salón.
 -- Tipo de JOIN: LEFT
+
+
+-- tables related: university.faculties; university.programs
+SELECT
+    T1.name AS Facultades,
+    T2.name AS Programas
+FROM university.faculties T1
+INNER JOIN university.programs T2
+    ON T1.faculty_id = T2.faculty_id
+WHERE T1.name = 'Facultad de Ciencias Económicas y Empresariales';
+
+
+-- Encontrar el salon y el edificio, en el cual se ofrece el curso
+-- de Cálculo Diferencial
+
+-- tables related:
+university.courses T1
+university.course_offerings T2 | T1.course_id = T2.course_id
+university.classrooms T3       | T2.classroom_id = T3.classroom_id
+university.buildings T4        | T3.building_id = T4.building_id
+
+SELECT
+    T4.name AS Edificio,
+    T3.name AS Salon
+FROM university.courses T1
+INNER JOIN university.course_offerings T2 
+    ON T1.course_id = T2.course_id
+INNER JOIN university.classrooms T3       
+    ON T2.classroom_id = T3.classroom_id
+INNER JOIN university.buildings T4        
+    ON T3.building_id = T4.building_id
+WHERE T1.name LIKE '%Cálculo Diferencial%';
+
+
+-- Identificar que personas tiene o no el rol de Admin
+SELECT
+    *
+FROM university.roles T1
+RIGHT JOIN university.users T2
+    ON T1.role_id = T2.role_id
+WHERE T1.name = 'Admin';
